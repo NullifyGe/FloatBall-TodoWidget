@@ -114,7 +114,7 @@ class FloatBall:
         now = datetime.now()
         for item in self.task_list_data:
             try:
-                dl = datetime.strptime(item["deadline"], "%Y-%m-%d %H-%M")
+                dl = datetime.strptime(item["deadline"], "%Y-%m-%d %H:%M")
                 if dl - now < timedelta(hours=24):
                     has_expire = True
                     break
@@ -132,23 +132,31 @@ class FloatBall:
         self.root.after(180000, self.low_power_loop)
 
     def on_press(self, e):
-        self.dragging = True
+        self.dragging = False
         self.off_x = e.x
         self.off_y = e.y
 
     def on_move(self, e):
-        if not self.dragging:
-            return
+        # 标记正在拖动
+        self.dragging = True
+        
+        # 拖动时自动关闭窗口
+        if self.panel_win:
+            self.close_panel()
+            
+        # 执行拖动移动
         x = self.root.winfo_x() + (e.x - self.off_x)
         y = self.root.winfo_y() + (e.y - self.off_y)
         self.root.geometry(f"+{x}+{y}")
-        if self.panel_win:
-            self.close_panel()
 
     def on_release(self, e):
-        self.dragging = False
-        if abs(e.x - self.off_x) < 3 and abs(e.y - self.off_y) < 3:
-            self.toggle_panel()
+        # 拖动结束 → 不打开窗口
+        if self.dragging:
+            self.dragging = False
+            return
+        
+        # 只有没拖动，才是点击 → 打开/关闭窗口
+        self.toggle_panel()
 
     def toggle_panel(self):
         if self.panel_win:
